@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志分析报告系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* 主卡片 */
+        .main-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        
+        /* 上传区域 */
+        .upload-section {
+            padding: 40px;
+            text-align: center;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #764ba2;
+            background: #f5f3ff;
+        }
+        .upload-area i {
+            font-size: 48px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+            display: block;
+        }
+        .upload-area .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        .upload-area .subtitle {
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .upload-area .subtitle span {
+            color: #667eea;
+            font-weight: 500;
+        }
+        #fileInput { display: none; }
+        
+        .file-info {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: #dcfce7;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .file-info.active { display: flex; }
+        .file-info span { color: #166534; font-size: 14px; }
+        .file-info .remove-btn {
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border: 1px solid #ef4444;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .file-info .remove-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+        
+        /* 提示词区域 */
+        .prompt-section {
+            padding: 24px 40px;
+            border-bottom: 1px solid #e5e7eb;
+            display: none;
+        }
+        .prompt-section.active { display: block; }
+        .prompt-section label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+        .prompt-section textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: inherit;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+        .prompt-section textarea:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118,75,162,0.1);
+        }
+        .prompt-section .placeholder {
+            font-style: italic;
+            color: #9ca3af;
+        }
+        
+        /* 操作区域 */
+        .action-section {
+            padding: 24px 40px;
+            display: flex;
+            gap: 12px;
+        }
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102,126,234,0.4);
+        }
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        /* 进度区域 */
+        .progress-section {
+            padding: 30px 40px;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f3ff 100%);
+            display: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-section.active { display: block; }
+        .progress-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(118,75,162,0.05), transparent);
+            animation: shimmer 3s infinite;
+        }
+        @keyframes shimmer {
+            100% { left: 100%; }
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .progress-header .step-name {
+            font-weight: 600;
+            color: #374151;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .progress-header .step-name::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #764ba2;
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        .progress-header .percent {
+            color: #764ba2;
+            font-weight: 700;
+            font-size: 24px;
+            text-shadow: 0 2px 4px rgba(118,75,162,0.2);
+        }
+        .progress-bar-track {
+            height: 16px;
+            background: #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f472b6 100%);
+            background-size: 200% 100%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.4);
+            position: relative;
+        }
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: flow 2s infinite;
+        }
+        @keyframes flow {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* 子步骤时间线 */
+        .sub-steps {
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .sub-step {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            font-size: 14px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        .sub-step::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 0;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+            transition: height 0.4s ease;
+            opacity: 0;
+        }
+        .sub-step.done::before,
+        .sub-step.active::before {
+            height: 60%;
+            opacity: 1;
+        }
+        .sub-step .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 14px;
+            flex-shrink: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .sub-step.done { 
+            color: #22c55e; 
+            background: rgba(34,197,94,0.08);
+        }
+        .sub-step.done .dot {
+            background: #22c55e;
+            box-shadow: 0 0 12px rgba(34,197,94,0.5);
+        }
+        .sub-step.done .dot::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8px;
+            color: white;
+            font-weight: 700;
+        }
+        .sub-step.active { 
+            color: #764ba2; 
+            font-weight: 600; 
+            background: rgba(118,75,162,0.1);
+            transform: translateX(8px);
+            box-shadow: 0 4px 12px rgba(118,75,162,0.15);
+        }
+        .sub-step.active .dot {
+            background: #764ba2;
+            box-shadow: 0 0 15px rgba(118,75,162,0.6);
+            animation: pulse-ring 1.8s infinite;
+        }
+        .sub-step.active .dot::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(118,75,162,0.3);
+            animation: pulse-ring-inner 1.8s infinite;
+        }
+        @keyframes pulse-ring {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: 0 0 15px rgba(118,75,162,0.6);
+            }
+            50% { 
+                transform: scale(1.2); 
+                box-shadow: 0 0 25px rgba(118,75,162,0.8);
+            }
+        }
+        @keyframes pulse-ring-inner {
+            0% { 
+                transform: translate(-50%, -50%) scale(0.5); 
+                opacity: 1;
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1.5); 
+                opacity: 0;
+            }
+        }
+        .sub-step.pending { 
+            color: #9ca3af; 
+            opacity: 0.7;
+        }
+        .sub-step.pending .dot { 
+            background: #d1d5db;
+            border: 2px solid #e5e7eb;
+        }
+        
+        /* 分块信息 */
+        .chunk-info {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            border-radius: 10px;
+            font-size: 14px;
+            color: #667eea;
+            margin-bottom: 16px;
+            display: none;
+            border-left: 4px solid #764ba2;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.1);
+            position: relative;
+            z-index: 1;
+        }
+        .chunk-info.active { 
+            display: block;
+            animation: fadeInUp 0.4s ease;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 时间信息 */
+        .time-info {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+            color: #6b7280;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        .time-info span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .time-info span::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9ca3af;
+        }
+        
+        /* 错误信息 */
+        .error-message {
+            padding: 14px;
+            background: #fee2e2;
+            border-radius: 8px;
+            color: #dc2626;
+            font-size: 14px;
+            margin-top: 16px;
+            display: none;
+        }
+        .error-message.active { display: block; }
+        
+        /* 完成区域 */
+        .complete-section {
+            padding: 30px 40px;
+            background: #dcfce7;
+            display: none;
+        }
+        .complete-section.active { display: block; }
+        .complete-icon {
+            font-size: 48px;
+            color: #22c55e;
+            margin-bottom: 16px;
+        }
+        .complete-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #166534;
+            margin-bottom: 8px;
+        }
+        .complete-desc {
+            font-size: 14px;
+            color: #15803d;
+            margin-bottom: 20px;
+        }
+        .download-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .download-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .download-btn-md {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .download-btn-pdf {
+            background: #ef4444;
+            color: white;
+        }
+        .download-btn-html {
+            background: #3b82f6;
+            color: white;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        /* 历史记录区域 */
+        .history-section {
+            margin-top: 30px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 24px 30px;
+        }
+        .history-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: #f9fafb;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .history-item:hover {
+            background: #f3f4f6;
+            border-color: #667eea;
+        }
+        .history-item .info {
+            flex: 1;
+        }
+        .history-item .filename {
+            font-weight: 500;
+            color: #1f2937;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .history-item .time {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        .history-item .status {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+        .status-done {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-failed {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .status-processing {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            body { padding: 20px 15px; }
+            .header h1 { font-size: 22px; }
+            .upload-section { padding: 25px; }
+            .upload-area { padding: 30px 20px; }
+            .action-section { flex-direction: column; }
+            .download-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 日志分析报告系统</h1>
+            <p>上传日志文件，AI自动分析并生成专业报告</p>
+        </div>
+        
+        <div class="main-card">
+            <!-- 上传区域 -->
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <i>📁</i>
+                    <div class="title">点击或拖拽文件到此处上传</div>
+                    <div class="subtitle">支持 <span>.log</span>, <span>.txt</span>, <span>.json</span>, <span>.csv</span>, <span>.pcap</span> 格式</div>
+                </div>
+                <input type="file" id="fileInput" accept=".log,.txt,.json,.csv,.pcap,.pcapng">
+                
+                <div class="file-info" id="fileInfo">
+                    <span id="fileName"></span>
+                    <span class="remove-btn" id="removeFile">移除</span>
+                </div>
+            </div>
+            
+            <!-- 提示词区域 -->
+            <div class="prompt-section" id="promptSection">
+                <label for="userPrompt">分析关注点（可选）</label>
+                <textarea id="userPrompt" placeholder="请输入您关注的分析重点，例如：\n- 找出所有错误日志\n- 分析性能瓶颈\n- 识别安全威胁\n- 追踪特定请求流程"></textarea>
+            </div>
+            
+            <!-- 操作区域 -->
+            <div class="action-section">
+                <button class="btn btn-secondary" id="resetBtn">重置</button>
+                <button class="btn btn-primary" id="analyzeBtn" disabled>开始分析</button>
+            </div>
+            
+            <!-- 进度区域 -->
+            <div class="progress-section" id="progressSection">
+                <div class="progress-header">
+                    <span class="step-name" id="stepName">等待处理</span>
+                    <span class="percent" id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+                
+                <div class="sub-steps">
+                    <div class="sub-step" id="stepUpload">
+                        <span class="dot"></span>
+                        <span>文件上传</span>
+                    </div>
+                    <div class="sub-step" id="stepValidate">
+                        <span class="dot"></span>
+                        <span>数据验证</span>
+                    </div>
+                    <div class="sub-step" id="stepParse">
+                        <span class="dot"></span>
+                        <span>日志解析</span>
+                    </div>
+                    <div class="sub-step" id="stepClean">
+                        <span class="dot"></span>
+                        <span>数据清洗</span>
+                    </div>
+                    <div class="sub-step" id="stepAnalyze">
+                        <span class="dot"></span>
+                        <span>AI分析</span>
+                    </div>
+                    <div class="sub-step" id="stepReport">
+                        <span class="dot"></span>
+                        <span>报告生成</span>
+                    </div>
+                </div>
+                
+                <div class="chunk-info" id="chunkInfo">
+                    <span id="chunkText"></span>
+                </div>
+                
+                <div class="time-info">
+                    <span>已耗时: <span id="elapsedTime">0</span>秒</span>
+                    <span>预估剩余: <span id="estimatedTime">计算中...</span></span>
+                </div>
+                
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+            
+            <!-- 完成区域 -->
+            <div class="complete-section" id="completeSection">
+                <div class="complete-icon">🎉</div>
+                <div class="complete-title">分析完成！</div>
+                <div class="complete-desc">您的日志分析报告已生成，点击下方按钮下载</div>
+                <div class="download-buttons">
+                    <button class="download-btn download-btn-md" id="downloadMd">
+                        <span>📝</span> Markdown
+                    </button>
+                    <button class="download-btn download-btn-pdf" id="downloadPdf">
+                        <span>📄</span> PDF
+                    </button>
+                    <button class="download-btn download-btn-html" id="downloadHtml">
+                        <span>🌐</span> HTML
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 历史记录 -->
+        <div class="history-section">
+            <h3>📜 历史分析记录</h3>
+            <div class="history-list" id="historyList">
+                <div style="text-align: center; color: #9ca3af; padding: 20px;">暂无历史记录</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentTaskId = null;
+        let currentFile = null;
+        let progressInterval = null;
+        
+        // DOM元素
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const removeFile = document.getElementById('removeFile');
+        const promptSection = document.getElementById('promptSection');
+        const userPrompt = document.getElementById('userPrompt');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const progressSection = document.getElementById('progressSection');
+        const stepName = document.getElementById('stepName');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressBar = document.getElementById('progressBar');
+        const chunkInfo = document.getElementById('chunkInfo');
+        const chunkText = document.getElementById('chunkText');
+        const elapsedTime = document.getElementById('elapsedTime');
+        const estimatedTime = document.getElementById('estimatedTime');
+        const errorMessage = document.getElementById('errorMessage');
+        const completeSection = document.getElementById('completeSection');
+        const downloadMd = document.getElementById('downloadMd');
+        const downloadPdf = document.getElementById('downloadPdf');
+        const downloadHtml = document.getElementById('downloadHtml');
+        const historyList = document.getElementById('historyList');
+        
+        // 子步骤元素
+        const steps = {
+            upload: document.getElementById('stepUpload'),
+            validate: document.getElementById('stepValidate'),
+            parse: document.getElementById('stepParse'),
+            clean: document.getElementById('stepClean'),
+            analyze: document.getElementById('stepAnalyze'),
+            report: document.getElementById('stepReport')
+        };
+        
+        // 初始化历史记录
+        loadHistory();
+        
+        // 文件上传处理
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        removeFile.addEventListener('click', resetUpload);
+        
+        resetBtn.addEventListener('click', resetUpload);
+        
+        analyzeBtn.addEventListener('click', startAnalysis);
+        
+        // 下载按钮
+        downloadMd.addEventListener('click', () => downloadReport('markdown'));
+        downloadPdf.addEventListener('click', () => downloadReport('pdf'));
+        downloadHtml.addEventListener('click', () => downloadReport('html'));
+        
+        function handleFile(file) {
+            // 验证文件类型
+            const allowedExtensions = ['.log', '.txt', '.json', '.csv', '.pcap', '.pcapng'];
+            const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+            
+            if (!allowedExtensions.includes(ext)) {
+                alert('不支持的文件格式，请上传.log, .txt, .json, .csv, .pcap或.pcapng文件');
+                return;
+            }
+            
+            // 验证文件大小（100MB）
+            if (file.size > 100 * 1024 * 1024) {
+                alert('文件大小超过限制（最大100MB）');
+                return;
+            }
+            
+            currentFile = file;
+            fileName.textContent = `已选择: ${file.name} (${formatSize(file.size)})`;
+            fileInfo.classList.add('active');
+            promptSection.classList.add('active');
+            analyzeBtn.disabled = false;
+        }
+        
+        function resetUpload() {
+            currentFile = null;
+            currentTaskId = null;
+            fileInput.value = '';
+            fileInfo.classList.remove('active');
+            promptSection.classList.remove('active');
+            analyzeBtn.disabled = true;
+            progressSection.classList.remove('active');
+            completeSection.classList.remove('active');
+            userPrompt.value = '';
+            errorMessage.classList.remove('active');
+            
+            // 重置进度条
+            progressBar.style.width = '0%';
+            progressPercent.textContent = '0%';
+            stepName.textContent = '等待处理';
+            
+            // 重置子步骤状态
+            Object.values(steps).forEach(step => {
+                step.className = 'sub-step pending';
+            });
+            
+            // 停止进度轮询
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+        }
+        
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        function startAnalysis() {
+            if (!currentFile) return;
+            
+            // 隐藏其他区域
+            promptSection.classList.remove('active');
+            analyzeBtn.disabled = true;
+            completeSection.classList.remove('active');
+            
+            // 显示进度区域
+            progressSection.classList.add('active');
+            
+            // 重置步骤状态
+            Object.values(steps).forEach(step => {
+                step.className = 'sub-step pending';
+            });
+            steps.upload.className = 'sub-step done';
+            
+            // 上传文件
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            formData.append('user_prompt', userPrompt.value);
+            
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentTaskId = data.task_id;
+                    
+                    // 上传成功后立即启动分析
+                    fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            task_id: currentTaskId,
+                            user_prompt: userPrompt.value
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // 开始轮询进度
+                            startProgressPolling();
+                        } else {
+                            showError(data.error);
+                        }
+                    })
+                    .catch(error => {
+                        showError('启动分析失败: ' + error.message);
+                    });
+                } else {
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                showError('文件上传失败: ' + error.message);
+            });
+        }
+        
+        function startProgressPolling() {
+            progressInterval = setInterval(() => {
+                if (!currentTaskId) {
+                    clearInterval(progressInterval);
+                    return;
+                }
+                
+                fetch(`/api/progress/${currentTaskId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateProgress(data);
+                        
+                        // 检查任务状态
+                        if (data.status === 'completed') {
+                            clearInterval(progressInterval);
+                            showComplete();
+                        } else if (data.status === 'failed') {
+                            clearInterval(progressInterval);
+                            showError(data.error_message);
+                        } else if (data.status === 'aborted') {
+                            clearInterval(progressInterval);
+                            showError('任务已被中止');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取进度失败:', error);
+                });
+            }, 1500);
+        }
+        
+        function updateProgress(data) {
+            // 更新进度条
+            progressBar.style.width = `${data.progress}%`;
+            progressPercent.textContent = `${data.progress}%`;
+            stepName.textContent = data.current_step;
+            
+            // 更新时间信息
+            elapsedTime.textContent = data.elapsed_time;
+            estimatedTime.textContent = data.estimated_remaining;
+            
+            // 更新分块信息
+            if (data.total_chunks > 0) {
+                chunkInfo.classList.add('active');
+                chunkText.textContent = `处理进度: ${data.processed_chunks} / ${data.total_chunks} 块`;
+            } else {
+                chunkInfo.classList.remove('active');
+            }
+            
+            // 更新子步骤状态
+            updateStepStatus(data.status);
+        }
+        
+        function updateStepStatus(status) {
+            const statusMap = {
+                'pending': ['pending', 'pending', 'pending', 'pending', 'pending', 'pending'],
+                'uploading': ['active', 'pending', 'pending', 'pending', 'pending', 'pending'],
+                'validating': ['done', 'active', 'pending', 'pending', 'pending', 'pending'],
+                'cleaning': ['done', 'done', 'done', 'active', 'pending', 'pending'],
+                'parsing': ['done', 'done', 'active', 'pending', 'pending', 'pending'],
+                'counting': ['done', 'done', 'done', 'done', 'pending', 'pending'],
+                'chunking': ['done', 'done', 'done', 'done', 'pending', 'pending'],
+                'analyzing': ['done', 'done', 'done', 'done', 'active', 'pending'],
+                'generating': ['done', 'done', 'done', 'done', 'done', 'active'],
+                'completed': ['done', 'done', 'done', 'done', 'done', 'done'],
+                'failed': ['done', 'done', 'done', 'done', 'done', 'pending']
+            };
+            
+            const statusList = statusMap[status] || ['pending', 'pending', 'pending', 'pending', 'pending', 'pending'];
+            const stepKeys = ['upload', 'validate', 'parse', 'clean', 'analyze', 'report'];
+            
+            stepKeys.forEach((key, index) => {
+                const className = statusList[index] === 'done' ? 'sub-step done' :
+                                 statusList[index] === 'active' ? 'sub-step active' :
+                                 'sub-step pending';
+                steps[key].className = className;
+            });
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+            analyzeBtn.disabled = false;
+        }
+        
+        function showComplete() {
+            progressSection.classList.remove('active');
+            completeSection.classList.add('active');
+            
+            // 刷新历史记录
+            loadHistory();
+        }
+        
+        function downloadReport(format) {
+            if (!currentTaskId) return;
+            
+            const url = `/api/download/${currentTaskId}/${format}`;
+            window.location.href = url;
+        }
+        
+        function loadHistory() {
+            fetch('/api/history')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.tasks.length > 0) {
+                    historyList.innerHTML = data.tasks.map(task => `
+                        <div class="history-item" onclick="downloadTaskReport('${task.task_id}')">
+                            <div class="info">
+                                <div class="filename">${task.filename}</div>
+                                <div class="time">${task.created_at}</div>
+                            </div>
+                            <span class="status ${getStatusCode(task.status)}">${getStatusText(task.status)}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    historyList.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 20px;">暂无历史记录</div>';
+                }
+            })
+            .catch(error => {
+                console.error('加载历史记录失败:', error);
+            });
+        }
+        
+        function getStatusCode(status) {
+            const statusMap = {
+                'completed': 'status-done',
+                'failed': 'status-failed',
+                'analyzing': 'status-processing',
+                'pending': 'status-processing'
+            };
+            return statusMap[status] || 'status-processing';
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                'completed': '已完成',
+                'failed': '失败',
+                'analyzing': '处理中',
+                'pending': '等待中',
+                'aborted': '已中止'
+            };
+            return statusMap[status] || status;
+        }
+        
+        function downloadTaskReport(taskId) {
+            // 下载最新的报告
+            window.location.href = `/api/download/${taskId}/markdown`;
+        }
+    </script>
+</body>
+</html>

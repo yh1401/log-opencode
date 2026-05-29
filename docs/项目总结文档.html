@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log OpenCode 项目总结文档 v1.6</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.7;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px 20px 0 0;
+            padding: 40px 50px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+
+        .header .meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .header .meta-item {
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .content {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 0 0 20px 20px;
+            padding: 50px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        h2:first-of-type {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #764ba2;
+            font-size: 1.3em;
+            margin: 30px 0 15px;
+        }
+
+        p {
+            margin: 15px 0;
+            color: #555;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+            border-left: 4px solid #667eea;
+            padding: 20px 25px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .status-done {
+            color: #22c55e;
+            font-weight: 600;
+        }
+
+        .status-new {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .priority-high {
+            color: #ef4444;
+        }
+
+        .priority-medium {
+            color: #f59e0b;
+        }
+
+        .priority-low {
+            color: #22c55e;
+        }
+
+        pre {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: "SF Mono", Monaco, Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: "SF Mono", Monaco, Consolas, monospace;
+            font-size: 0.9em;
+            color: #764ba2;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .feature-item {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .feature-item .icon {
+            font-size: 1.5em;
+        }
+
+        .feature-item .text {
+            flex: 1;
+        }
+
+        .feature-item .status {
+            color: #22c55e;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .version-timeline {
+            position: relative;
+            margin: 30px 0;
+            padding-left: 30px;
+        }
+
+        .version-timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            border-radius: 3px;
+        }
+
+        .version-item {
+            position: relative;
+            margin-bottom: 25px;
+            background: #f9f9f9;
+            padding: 20px 25px;
+            border-radius: 10px;
+        }
+
+        .version-item::before {
+            content: '';
+            position: absolute;
+            left: -26px;
+            top: 25px;
+            width: 12px;
+            height: 12px;
+            background: #667eea;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px #667eea;
+        }
+
+        .version-item.latest::before {
+            background: #22c55e;
+            box-shadow: 0 0 0 3px #22c55e;
+        }
+
+        .version-item .tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .version-item.latest .tag {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .version-item .date {
+            color: #999;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        .version-item .desc {
+            margin-top: 10px;
+            color: #555;
+        }
+
+        .todo-list {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 20px 25px;
+            border-radius: 0 10px 10px 0;
+            margin: 20px 0;
+        }
+
+        .todo-item {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .todo-item::before {
+            content: '☐';
+            position: absolute;
+            left: 0;
+            color: #f59e0b;
+        }
+
+        .diagram-box {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: "SF Mono", Monaco, Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .api-item {
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .api-item .method {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .api-item .method.post {
+            background: #22c55e;
+        }
+
+        .api-item .endpoint {
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .header .meta {
+                gap: 10px;
+            }
+
+            pre {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Log OpenCode 项目总结文档</h1>
+            <div class="meta">
+                <span class="meta-item">📌 版本: v1.6</span>
+                <span class="meta-item">📅 更新日期: 2026-05-28</span>
+                <span class="meta-item">✅ 文档状态: 更新完成</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2>📋 项目概述</h2>
+
+            <p><strong>Log OpenCode</strong> 是一个基于 Python 的 AI 驱动日志分析工具，利用大语言模型（Qwen3-235B）智能分析日志文件并生成结构化报告。项目提供 CLI 和 Web 两种使用方式，支持异步处理、分块分析和多种输出格式。</p>
+
+            <h3>✨ 核心功能</h3>
+
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <span class="icon">🔍</span>
+                    <span class="text">多格式日志解析</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">🤖</span>
+                    <span class="text">AI 智能分析</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">📄</span>
+                    <span class="text">多格式报告</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">🌐</span>
+                    <span class="text">Web 界面</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">⚡</span>
+                    <span class="text">异步处理</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">📦</span>
+                    <span class="text">分块分析</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">🔑</span>
+                    <span class="text">文件去重</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">📝</span>
+                    <span class="text">执行日志</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">🚀</span>
+                    <span class="text">一键启动</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">⏹️</span>
+                    <span class="text">任务中止</span>
+                    <span class="status">✅</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">📜</span>
+                    <span class="text">历史记录</span>
+                    <span class="status">✅</span>
+                </div>
+            </div>
+
+            <h2>🏗️ 项目结构</h2>
+
+            <pre><code>log_opencode/
+├── .pids/                              # PID 文件存储
+│   ├── ollama.pid                    # Ollama 进程 PID
+│   └── web.pid                       # Web 后端进程 PID
+│
+├── config/                            # 配置文件目录
+│   └── config.yaml                    # 主配置文件
+│
+├── docs/                              # 文档目录
+│   └── 项目总结文档.md                # 项目总结文档
+│
+├── logs/                              # 日志目录
+│   ├── startup/                       # 启动日志
+│   ├── exec/                          # 任务执行日志
+│   └── uploads/                       # 上传的日志文件
+│
+├── scripts/                           # 核心脚本模块
+│   ├── log_parser.py                 # 日志解析器
+│   ├── log_analyzer.py               # AI 分析器
+│   └── main.py                       # CLI 命令行入口
+│
+├── web/                               # Web 应用
+│   └── backend/
+│       ├── app.py                    # Flask 后端
+│       └── requirements.txt          # Web 依赖
+│
+├── output/                            # 分析报告输出
+├── samples/                           # 示例文件
+├── start.sh                          # 🚀 一键启动脚本
+└── README.md</code></pre>
+
+            <h3>🧩 模块职责</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>模块</th>
+                        <th>文件</th>
+                        <th>职责描述</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>日志解析器</strong></td>
+                        <td><code>log_parser.py</code></td>
+                        <td>解析多种格式日志，提取时间戳、级别、消息</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AI 分析器</strong></td>
+                        <td><code>log_analyzer.py</code></td>
+                        <td>调用大语言模型分析日志，支持云端/本地模型降级</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Web 后端</strong></td>
+                        <td><code>app.py</code></td>
+                        <td>提供文件上传、分析任务、进度查询、报告下载 API</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CLI 入口</strong></td>
+                        <td><code>main.py</code></td>
+                        <td>命令行界面</td>
+                    </tr>
+                    <tr>
+                        <td><strong>任务日志</strong></td>
+                        <td><code>TaskLogger</code></td>
+                        <td>任务执行日志（按日期分目录）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>一键启动</strong></td>
+                        <td><code>start.sh</code></td>
+                        <td>自动启动 Ollama + Web 后端</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>🔄 数据流</h2>
+
+            <h3>整体架构</h3>
+
+            <div class="diagram-box">
+┌─────────────────────────────────────────────────────────────────┐
+│                         用户交互层                               │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                    Web 界面 (深色主题)                   │   │
+│  │  拖拽上传 → 启动分析 → 进度轮询 → 报告下载              │   │
+│  │  停止分析 ← 中止按钮                                    │   │
+│  │  历史记录列表 ← 最近 20 条分析记录                      │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+          │                                    ▲
+          ▼                                    │
+┌─────────────────────────────────────────────────────────────────┐
+│                         服务层 (Flask)                          │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  API 端点:                                               │   │
+│  │  /api/upload         → 上传文件，返回 task_id             │   │
+│  │  /api/analyze        → 启动分析（传入 task_id）          │   │
+│  │  /api/progress/{id}  → 轮询进度                          │   │
+│  │  /api/abort/{id}     → 中止任务                          │   │
+│  │  /api/history        → 获取历史任务列表                  │   │
+│  │  /api/download/{id}/{format} → 下载报告                  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘</div>
+
+            <h3>API 端点</h3>
+
+            <div class="api-grid">
+                <div class="api-item">
+                    <div class="method">GET</div>
+                    <div class="endpoint">/</div>
+                    <div>Web 界面</div>
+                </div>
+                <div class="api-item">
+                    <div class="method post">POST</div>
+                    <div class="endpoint">/api/upload</div>
+                    <div>上传文件</div>
+                </div>
+                <div class="api-item">
+                    <div class="method post">POST</div>
+                    <div class="endpoint">/api/analyze</div>
+                    <div>启动分析</div>
+                </div>
+                <div class="api-item">
+                    <div class="method">GET</div>
+                    <div class="endpoint">/api/progress/{id}</div>
+                    <div>轮询进度</div>
+                </div>
+                <div class="api-item">
+                    <div class="method post">POST</div>
+                    <div class="endpoint">/api/abort/{id}</div>
+                    <div>中止任务</div>
+                </div>
+                <div class="api-item">
+                    <div class="method">GET</div>
+                    <div class="endpoint">/api/history</div>
+                    <div>历史记录</div>
+                </div>
+                <div class="api-item">
+                    <div class="method">GET</div>
+                    <div class="endpoint">/api/download/{id}/{format}</div>
+                    <div>下载报告</div>
+                </div>
+            </div>
+
+            <h3>📊 10 步流水线</h3>
+
+            <div class="diagram-box">
+┌─────────────────────────────────────────────────────────────────────┐
+│                      分析任务 10 步流水线                            │
+├─────────────────────────────────────────────────────────────────────┤
+│  Step 1: 文件上传 (已完成，由前端上传)                              │
+│  Step 2: 文件去重校验 → MD5 校验文件完整性                         │
+│  Step 3: 加载配置 → 读取 config.yaml                                │
+│  Step 4: 解析日志 → LogParser.parse_file()                         │
+│  Step 5: 条目统计 → 计算级别分布                                   │
+│  Step 6: 分块策略 → 按 batch_size 分块                            │
+│  Step 7: AI 模型分析 → 逐块调用 AI → 合并结果                     │
+│  Step 8: 生成 Markdown → 保存到 output/{task_id}.md               │
+│  Step 9: 生成 PDF → 保存到 output/{task_id}.pdf（支持中文）       │
+│  Step 10: 完成 → 更新任务状态，返回结果                            │
+└─────────────────────────────────────────────────────────────────────┘</div>
+
+            <h2>🆕 v1.6 版本新增/改进</h2>
+
+            <div class="highlight-box">
+                <h3>1. 任务中止功能 ⏹️</h3>
+                <table>
+                    <tr>
+                        <td><strong>前端</strong></td>
+                        <td>停止按钮 + <code>stopAnalysis()</code> 函数</td>
+                    </tr>
+                    <tr>
+                        <td><strong>后端</strong></td>
+                        <td><code>POST /api/abort/{task_id}</code> 端点</td>
+                    </tr>
+                    <tr>
+                        <td><strong>执行检测</strong></td>
+                        <td>分析循环中检查 <code>task.get('aborted', False)</code></td>
+                    </tr>
+                </table>
+            </div>
+
+            <h3>2. 历史记录功能 📜</h3>
+
+            <table>
+                <tr>
+                    <td><strong>端点</strong></td>
+                    <td><code>GET /api/history</code></td>
+                </tr>
+                <tr>
+                    <td><strong>返回数量</strong></td>
+                    <td>最多 20 条</td>
+                </tr>
+                <tr>
+                    <td><strong>筛选条件</strong></td>
+                    <td><code>status in ['completed', 'error']</code></td>
+                </tr>
+                <tr>
+                    <td><strong>排序</strong></td>
+                    <td>按 task_id 倒序（最新优先）</td>
+                </tr>
+            </table>
+
+            <h3>3. 预估剩余时间 ⏱️</h3>
+
+            <p>记录每块处理时间 <code>chunk_times_ms</code>，计算平均处理速度，动态预估剩余时间。</p>
+
+            <h2>🚀 一键启动脚本</h2>
+
+            <pre><code>./start.sh              # 启动 Ollama + Web 后端
+./start.sh --no-ollama  # 仅启动 Web 后端
+./start.sh --stop       # 停止所有服务</code></pre>
+
+            <h3>启动流程</h3>
+
+            <div class="diagram-box">
+┌─────────────────────────────────────────────────────────────────┐
+│                    start.sh 启动流程                             │
+├─────────────────────────────────────────────────────────────────┤
+│  1. 检查依赖                                                     │
+│     ├─ Ollama 是否安装                                           │
+│     ├─ Python venv 是否存在                                      │
+│     └─ 本地模型 qwen3.5:9b 是否下载                              │
+│                                                                  │
+│  2. 启动 Ollama（可选）                                          │
+│     ├─ 检查是否已运行                                            │
+│     ├─ 后台启动 ollama serve                                     │
+│     └─ 等待服务就绪（最多 30 秒）                                 │
+│                                                                  │
+│  3. 启动 Web 后端                                                │
+│     ├─ 检查端口 5001 占用                                         │
+│     ├─ 设置 PYTHONPATH                                           │
+│     └─ 后台启动 Flask 应用                                        │
+│                                                                  │
+│  4. 显示状态                                                     │
+│     ├─ 访问地址: http://localhost:5001                           │
+│     ├─ 日志文件位置                                              │
+│     └─ 实时日志监控                                              │
+└─────────────────────────────────────────────────────────────────┘</div>
+
+            <h2>⚙️ 配置项说明</h2>
+
+            <h3>config.yaml 结构</h3>
+
+            <pre><code>model:                    # AI 模型配置
+  provider: "modelarts"   # 提供商: modelarts / ollama
+  name: "qwen3-235b-a22b"# 模型名称
+  base_url: "https://..." # API 端点
+  api_key: "..."         # API 密钥
+  fallback_provider: "ollama"     # 降级提供商
+  fallback_model: "qwen3.5:9b"    # 降级模型
+  fallback_url: "http://localhost:11434/v1"
+
+log:                     # 日志解析配置
+  formats:               # 支持的日志格式
+    - name: "standard"
+    - name: "apache_common"
+    - name: "json"
+  levels: [DEBUG, INFO, WARNING, ERROR, CRITICAL]
+
+analysis:                # 分析配置
+  batch_size: 5000      # 单次最大分析条目数
+
+output:                  # 输出配置
+  format: "markdown"
+  directory: "../output"
+
+opencode:                # OpenCode 集成（待实现）
+  enabled: true
+  auto_launch: false</code></pre>
+
+            <h2>🚀 使用方式</h2>
+
+            <h3>一键启动（推荐）</h3>
+
+            <pre><code>cd /Users/a666/Documents/trae_projects/log_opencode
+./start.sh
+# 访问 http://localhost:5001</code></pre>
+
+            <h3>手动启动</h3>
+
+            <pre><code># 启动 Ollama（可选）
+ollama serve
+
+# 激活虚拟环境
+source web/backend/venv/bin/activate
+
+# 启动 Web 后端
+export PYTHONPATH="$PWD/scripts:$PYTHONPATH"
+python web/backend/app.py</code></pre>
+
+            <h3>停止服务</h3>
+
+            <pre><code>./start.sh --stop</code></pre>
+
+            <h2>🔧 改进点</h2>
+
+            <h3>1. 架构层面</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>问题</th>
+                        <th>改进建议</th>
+                        <th>优先级</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>任务状态存储在内存</td>
+                        <td>使用 Redis 替代内存存储</td>
+                        <td><span class="priority-high">🔴 高</span></td>
+                    </tr>
+                    <tr>
+                        <td>API 轮询效率</td>
+                        <td>考虑 WebSocket 实时推送</td>
+                        <td><span class="priority-medium">🟡 中</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2. 功能层面</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>问题</th>
+                        <th>改进建议</th>
+                        <th>优先级</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>OpenCode CLI 未集成</td>
+                        <td>实现 OpenCode CLI 调用</td>
+                        <td><span class="priority-high">🔴 高</span></td>
+                    </tr>
+                    <tr>
+                        <td>无用户认证系统</td>
+                        <td>添加用户认证，支持多用户</td>
+                        <td><span class="priority-medium">🟡 中</span></td>
+                    </tr>
+                    <tr>
+                        <td>日志格式有限</td>
+                        <td>增加 nginx、syslog、Docker 等格式</td>
+                        <td><span class="priority-medium">🟡 中</span></td>
+                    </tr>
+                    <tr>
+                        <td>分块合并逻辑简单</td>
+                        <td>改进多块分析结果的合并策略</td>
+                        <td><span class="priority-medium">🟡 中</span></td>
+                    </tr>
+                    <tr>
+                        <td>历史记录仅内存</td>
+                        <td>持久化到文件或数据库</td>
+                        <td><span class="priority-medium">🟡 中</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3. 运维层面</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>问题</th>
+                        <th>改进建议</th>
+                        <th>优先级</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>无监控指标</td>
+                        <td>集成 Prometheus metrics</td>
+                        <td><span class="priority-medium">🟡 中</span></td>
+                    </tr>
+                    <tr>
+                        <td>配置硬编码</td>
+                        <td>支持环境变量覆盖配置</td>
+                        <td><span class="priority-low">🟢 低</span></td>
+                    </tr>
+                    <tr>
+                        <td>Docker 支持</td>
+                        <td>添加 Dockerfile</td>
+                        <td><span class="priority-low">🟢 低</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>📋 待实现功能清单</h2>
+
+            <div class="todo-list">
+                <div class="todo-item"><strong>OpenCode CLI 集成</strong> - 检测/调用 opencode 命令</div>
+                <div class="todo-item"><strong>任务管理系统</strong> - Redis 存储、Celery 队列</div>
+                <div class="todo-item"><strong>历史记录持久化</strong> - 保存到文件或数据库</div>
+                <div class="todo-item"><strong>增强功能</strong> - 多语言日志、实时监控、告警</div>
+                <div class="todo-item"><strong>部署支持</strong> - Docker、Docker Compose</div>
+            </div>
+
+            <h2>📊 版本变更记录</h2>
+
+            <div class="version-timeline">
+                <div class="version-item">
+                    <span class="tag">v1.0</span>
+                    <span class="date">2026-05-28</span>
+                    <div class="desc">基础功能：日志解析、AI 分析、Web 界面、报告生成</div>
+                </div>
+                <div class="version-item">
+                    <span class="tag">v1.1</span>
+                    <span class="date">2026-05-28</span>
+                    <div class="desc">文件去重、大文件分块、10步流水线、MapReduce</div>
+                </div>
+                <div class="version-item">
+                    <span class="tag">v1.2</span>
+                    <span class="date">2026-05-28</span>
+                    <div class="desc">任务ID格式优化、执行日志按日期分目录、API调用记录</div>
+                </div>
+                <div class="version-item">
+                    <span class="tag">v1.3</span>
+                    <span class="date">2026-05-28</span>
+                    <div class="desc">API 重构（分离上传和分析）、前端深色主题重写、PDF中文支持</div>
+                </div>
+                <div class="version-item">
+                    <span class="tag">v1.4</span>
+                    <span class="date">2026-05-28</span>
+                    <div class="desc">新增 start.sh 一键启动脚本、PID 文件管理、启动日志目录</div>
+                </div>
+                <div class="version-item latest">
+                    <span class="tag">v1.5</span>
+                    <span class="date">2026-05-28</span>
+                    <div class="desc"><strong>新增任务中止功能、历史记录功能完整实现、预估剩余时间显示</strong></div>
+                </div>
+                <div class="version-item latest">
+                    <span class="tag">v1.6</span>
+                    <span class="date">2026-05-28</span>
+                    <div class="desc"><strong>修复 start.sh 端口查杀逻辑、kill -9 强制终止、等待端口释放</strong></div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>📝 文档信息</p>
+                <p>创建日期: 2026-05-28 | 最后更新: 2026-05-28 | 项目版本: v1.6</p>
+                <p style="margin-top: 10px;">📂 文档位置: <code>docs/项目总结文档.md</code> | <code>docs/项目总结文档.html</code></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

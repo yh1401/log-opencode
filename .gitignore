@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.env
+
+# Logs
+logs/
+*.log
+!logs/.gitkeep
+
+# Output
+output/
+*.pdf
+*.md
+
+# Uploads
+uploads/
+
+# Data
+data/
+
+# PID files
+.pids/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Config
+config/config.yaml
+config/settings.py
+
+# Virtual environment
+web/backend/venv/

@@ -1,0 +1,14 @@
+# Log OpenCode - Dependencies
+
+# YAML parsing
+pyyaml>=6.0
+
+# HTTP requests for API calls
+requests>=2.31.0
+
+# (Optional) For advanced log parsing
+# regex>=2023.10.3
+
+# (Optional) For testing
+# pytest>=7.4.0
+# pytest-cov>=4.1.0

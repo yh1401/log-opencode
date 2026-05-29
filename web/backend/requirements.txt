@@ -1,0 +1,20 @@
+# Web 后端依赖
+
+# Flask - Web 框架
+flask>=2.3.0
+
+# Flask-CORS - 跨域支持
+flask-cors>=4.0.0
+
+# PyYAML - YAML 解析
+pyyaml>=6.0
+
+# Requests - HTTP 请求
+requests>=2.31.0
+
+# ReportLab - PDF 生成（可选）
+reportlab>=4.0.0
+
+# 用于异步任务（如果需要更强大的任务队列）
+# celery>=5.3.0
+# redis>=5.0.0
