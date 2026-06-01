@@ -6,6 +6,7 @@ LLM客户端模块 - 调用AI模型API（集成OpenCode会话管理）
 import requests
 import json
 import time
+import os
 from typing import Dict, Any, Optional, List
 from config.settings import settings
 from app.ai.opencode_session import session_manager

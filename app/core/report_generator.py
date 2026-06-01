@@ -78,16 +78,33 @@ class ReportGenerator:
                 md.append(f"| 日志条目数 | {file_info['total_entries']} |")
             md.append("")
         
-        # 如果data是字符串，直接作为Markdown内容添加
+        # 如果data是字符串，检查是否是错误信息
         if isinstance(data, str):
-            # 检查是否是JSON格式字符串
-            try:
-                json_data = json.loads(data)
-                # 如果是JSON，转换为友好的Markdown
-                md.append(self._json_to_markdown(json_data))
-            except json.JSONDecodeError:
-                # 如果不是JSON，直接作为Markdown内容
-                md.append(data)
+            # 检查是否是错误信息
+            if data.startswith("OpenCode执行失败") or data.startswith("❌"):
+                # 返回友好的错误报告
+                md.append("## ❌ 分析失败")
+                md.append("")
+                md.append("很抱歉，日志分析过程中出现问题。")
+                md.append("")
+                md.append("### 可能的原因：")
+                md.append("- AI模型服务未正常运行")
+                md.append("- 网络连接问题")
+                md.append("- 模型配置不正确")
+                md.append("")
+                md.append("### 建议：")
+                md.append("- 检查Ollama服务是否正常运行")
+                md.append("- 验证模型名称是否正确")
+                md.append("- 稍后重试")
+            else:
+                # 检查是否是JSON格式字符串
+                try:
+                    json_data = json.loads(data)
+                    # 如果是JSON，转换为友好的Markdown
+                    md.append(self._json_to_markdown(json_data))
+                except json.JSONDecodeError:
+                    # 如果不是JSON，直接作为Markdown内容
+                    md.append(data)
         elif isinstance(data, dict):
             # 如果是字典，转换为友好的Markdown
             md.append(self._json_to_markdown(data))

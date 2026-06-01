@@ -32,13 +32,8 @@ class OpenCodeClient:
         
         try:
             # 构建分析提示词
-            prompt = f"""
-请分析以下日志文件：
-
-{user_prompt}
-
-日志内容：
-"""
+            analysis_focus = user_prompt if user_prompt else "全面分析日志内容，识别错误、警告和关键事件"
+            prompt = f"请分析以下日志文件。分析重点：{analysis_focus}。请提供结构化的分析报告，包括：1)概览摘要 2)关键事件 3)错误详情 4)根因分析 5)改进建议"
             
             # 判断使用文件路径还是内容
             if file_path and os.path.exists(file_path):
@@ -61,13 +56,16 @@ class OpenCodeClient:
             else:
                 return "❌ 未提供日志内容或文件路径"
             
-            # 构建OpenCode命令
+            # 构建OpenCode命令 - 使用列表方式更安全
+            # opencode run [message..] [options]
             command = [
-                'opencode',
+                'opencode', 'run',
+                prompt,
                 '--model', self.model,
-                '--prompt', prompt,
                 '--file', input_file
             ]
+            
+            print(f"🚀 执行命令: opencode run '{prompt[:50]}...' --model {self.model} --file {input_file}")
             
             # 执行命令
             result = subprocess.run(
